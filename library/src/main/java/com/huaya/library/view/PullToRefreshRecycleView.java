@@ -1,17 +1,19 @@
 package com.huaya.library.view;
 
 import android.content.Context;
-import android.graphics.Color;
+import android.graphics.Canvas;
 import android.support.annotation.Nullable;
 import android.support.v4.view.GestureDetectorCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.GestureDetector;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
-import android.widget.TextView;
+import android.view.View;
+import android.view.ViewGroup;
 
+import com.huaya.library.R;
 import com.huaya.library.adapter.HeaderAndFooterWrapper;
 
 /**
@@ -49,8 +51,16 @@ public class PullToRefreshRecycleView extends RecyclerView {
 
     private GestureDetectorCompat gestureDetectorCompat;
 
+    private View footer;
+    private View header;
+
     private void init(Context mContext) {
         this.mContext = mContext;
+        LayoutInflater from = LayoutInflater.from(mContext);
+        footer = from.inflate(R.layout.item_footer, null, false);
+        header = from.inflate(R.layout.item_header, null, false);
+        header.setPadding(0, 0, 0, 0);
+        footer.setPadding(0, 0, 0, 0);
         gestureDetectorCompat = new GestureDetectorCompat(mContext, mGestureListener);
 
     }
@@ -137,11 +147,8 @@ public class PullToRefreshRecycleView extends RecyclerView {
     private void addFooter() {
         Adapter adapter = getAdapter();
         if (adapter instanceof HeaderAndFooterWrapper) {
-            TextView textView = new TextView(mContext);
-            textView.setHeight(100);
-            textView.setText("我是脚布局");
-            textView.setBackgroundColor(Color.GRAY);
-            ((HeaderAndFooterWrapper) adapter).addFootView(textView);
+
+            ((HeaderAndFooterWrapper) adapter).addFootView(footer);
 
         }
     }
@@ -149,13 +156,34 @@ public class PullToRefreshRecycleView extends RecyclerView {
     private void addHeader() {
         Adapter adapter = getAdapter();
         if (adapter instanceof HeaderAndFooterWrapper) {
-            TextView textView = new TextView(mContext);
-            textView.setHeight(100);
-            textView.setText("我是头布局");
-            textView.setBackgroundColor(Color.GRAY);
-            ((HeaderAndFooterWrapper) adapter).addHeaderView(textView);
+            ((HeaderAndFooterWrapper) adapter).addHeaderView(header);
+
 
         }
+    }
+
+    @Override
+    protected void dispatchDraw(Canvas canvas) {
+        super.dispatchDraw(canvas);
+    }
+
+    private void measureView(View view) {
+        ViewGroup.LayoutParams layoutParams = view.getLayoutParams();
+        if (layoutParams == null) {
+            layoutParams = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        }
+        int childWidthSpec = ViewGroup.getChildMeasureSpec(0, 0, layoutParams.width);
+        int height = layoutParams.height;
+        int childHeightSpec;
+        if (height > 0) {
+            childHeightSpec = MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY);
+
+        } else {
+            childHeightSpec = MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED);
+        }
+        view.measure(childWidthSpec, childHeightSpec);
+
+
     }
 
 }
