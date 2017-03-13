@@ -1,17 +1,18 @@
 package com.huaya.pullrefreshrecycleview;
 
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.os.Environment;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
+import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.huaya.library.adapter.HeaderAndFooterWrapper;
-import com.huaya.library.view.CleanTips;
-import com.huaya.library.view.CustomToast;
 import com.huaya.library.view.FloatToast;
 import com.huaya.library.view.PullToRefreshRecycleView;
+
+import java.io.File;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -19,6 +20,10 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        File externalStorageDirectory = Environment.getExternalStorageDirectory();
+        String absolutePath = externalStorageDirectory.getAbsolutePath();
+        Log.i("xiaoqiao",absolutePath);
 
         View addHead = findViewById(R.id.addHead);
         View addFoot = findViewById(R.id.addFoot);

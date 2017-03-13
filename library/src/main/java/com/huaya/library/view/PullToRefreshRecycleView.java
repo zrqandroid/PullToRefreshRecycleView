@@ -7,10 +7,12 @@ import android.support.v4.view.GestureDetectorCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 
 import com.huaya.library.R;
@@ -54,6 +56,10 @@ public class PullToRefreshRecycleView extends RecyclerView {
     private View footer;
     private View header;
 
+    private int scaledTouchSlop;
+
+    private LinearLayoutManager layoutManager;
+
     private void init(Context mContext) {
         this.mContext = mContext;
         LayoutInflater from = LayoutInflater.from(mContext);
@@ -61,6 +67,7 @@ public class PullToRefreshRecycleView extends RecyclerView {
         header = from.inflate(R.layout.item_header, null, false);
         header.setPadding(0, 0, 0, 0);
         footer.setPadding(0, 0, 0, 0);
+        scaledTouchSlop = ViewConfiguration.get(mContext).getScaledTouchSlop();
         gestureDetectorCompat = new GestureDetectorCompat(mContext, mGestureListener);
 
     }
@@ -74,7 +81,7 @@ public class PullToRefreshRecycleView extends RecyclerView {
             if (distanceY > 0) {
                 //顶部item向上移动
 
-                moveUp(layoutManager, firstItemPostion);
+                moveUp(firstItemPostion);
 
             } else if (distanceY < 0) {
                 //顶部item向下移动
@@ -85,29 +92,44 @@ public class PullToRefreshRecycleView extends RecyclerView {
             return super.onScroll(e1, e2, distanceX, distanceY);
         }
 
+        @Override
+        public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+            return super.onFling(e1, e2, velocityX, velocityY);
+        }
     };
 
-    private void moveUp(LinearLayoutManager layoutManager, int firstItemPostion) {
+    private void moveUp(int firstItemPostion) {
+        if (firstItemPostion >= 1 && status == SHOW_HEADER) {
+            status = NORMAL;
+            Log.i("xiaoqiao", "移除头部");
+            removeHeader();
+        }
+
         int visibleItemCount = layoutManager.getChildCount();
         int totalItemCount = layoutManager.getItemCount();
         if ((visibleItemCount + firstItemPostion) >= totalItemCount && status == NORMAL) {
             status = SHOW_FOOTER;
-            addFooter();
-        } else if ((visibleItemCount + firstItemPostion) < totalItemCount && status == SHOW_FOOTER) {
-            status = NORMAL;
-            removeFooter();
+            Log.i("xiaoqiao", "显示尾部");
 
+            addFooter();
         }
 
     }
 
     private void moveDown(int firstItemPostion) {
+        int visibleItemCount = layoutManager.getChildCount();
+        int totalItemCount = layoutManager.getItemCount();
         if (firstItemPostion == 0 && status == NORMAL) {
             status = SHOW_HEADER;
+            Log.i("xiaoqiao", "显示头部");
             addHeader();
-        } else if (firstItemPostion >= 1 && status == SHOW_HEADER) {
+            return;
+        }
+
+        if ((visibleItemCount + firstItemPostion) < totalItemCount && status == SHOW_FOOTER) {
             status = NORMAL;
-            removeHeader();
+            removeFooter();
+
         }
     }
 
@@ -127,8 +149,15 @@ public class PullToRefreshRecycleView extends RecyclerView {
     @Override
     public void onScrolled(int dx, int dy) {
         super.onScrolled(dx, dy);
+        if (dy > 0) {
+            //向上滑动
+        } else if (dy < 0) {
+            //向下滑动
+        }
+
 
     }
+
 
     private void removeFooter() {
         Adapter adapter = getAdapter();
@@ -138,9 +167,41 @@ public class PullToRefreshRecycleView extends RecyclerView {
         }
     }
 
+    private float startY;
+
     @Override
     public boolean onTouchEvent(MotionEvent e) {
-        gestureDetectorCompat.onTouchEvent(e);
+        if (layoutManager == null) {
+            layoutManager = (LinearLayoutManager) getLayoutManager();
+        }
+
+        int firstItemPostion = layoutManager.findFirstCompletelyVisibleItemPosition();
+        switch (e.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                startY = e.getRawY();
+                break;
+            case MotionEvent.ACTION_MOVE:
+                if (startY == 0) {
+                    startY = e.getRawY();
+                }
+                float disY = e.getRawY() - startY;
+                if (disY > 0) {
+                    //指尖向下滑动
+                    moveDown(firstItemPostion);
+                }
+                if (disY < 0) {
+                    //指尖向上滑动
+                    moveUp(firstItemPostion);
+
+                }
+
+                break;
+            case MotionEvent.ACTION_UP:
+                startY = 0;
+                break;
+
+        }
+
         return super.onTouchEvent(e);
     }
 
